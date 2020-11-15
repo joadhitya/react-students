@@ -21,16 +21,22 @@ const api = "http://localhost:5000";
 function LoginComp(props) {
   const { dispatch } = useContext(AuthContext);
   const initialState = {
-    email: "",
-    password: "",
+    // email: "",
+    // password: "",
     isSubmitting: false,
     errorMessage: null,
   };
 
+  const stateForm = {
+    email: "",
+    password: "",
+  };
+
   const [data, setData] = useState(initialState);
+  const [dataForm, setDataForm] = useState(stateForm);
   const handleInputChange = (event) => {
-    setData({
-      ...data,
+    setDataForm({
+      ...dataForm,
       [event.target.name]: event.target.value,
     });
   };
@@ -42,8 +48,8 @@ function LoginComp(props) {
     });
 
     const requestBody = {
-      email: data.email,
-      password: data.password,
+      email: dataForm.email,
+      password: dataForm.password,
     };
 
     const config = {
@@ -55,12 +61,18 @@ function LoginComp(props) {
     axios
       .post(`${api}/auth/api/v1/login`, qs.stringify(requestBody), config)
       .then((res) => {
-        if (res.data.success) {
+        if (res.data.success && res.data.isVerified === 1) {
           dispatch({
             type: "LOGIN",
             payload: res.data,
           });
           props.history.push("/dashboard");
+        } else if (res.data.success && res.data.isVerified === 0) {
+          setData({
+            ...data,
+            isSubmitting: false,
+            errorMessage: "Email Not Verified, please check your email!",
+          });
         } else {
           setData({
             ...data,
@@ -71,7 +83,7 @@ function LoginComp(props) {
 
         throw res;
       })
-      .catch(err => console.log(err));
+      .catch((err) => console.log(err));
   };
 
   return (
@@ -96,7 +108,7 @@ function LoginComp(props) {
                   name="email"
                   id="exampleEmail"
                   placeholder="Input your Email"
-                  value={data.email}
+                  value={dataForm.email}
                   onChange={handleInputChange}
                 />
               </FormGroup>
@@ -107,7 +119,7 @@ function LoginComp(props) {
                   name="password"
                   id="examplePassword"
                   placeholder="Input your Password"
-                  value={data.password}
+                  value={dataForm.password}
                   onChange={handleInputChange}
                 />
               </FormGroup>
